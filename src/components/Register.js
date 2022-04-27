@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import CredentialsContext from "../store/CredentialsContext";
 
 const Register = () => {
   const [userInput, setUserInput] = useState({
@@ -7,6 +8,8 @@ const Register = () => {
     password: "",
   });
   const [errorMessage, setErrorMessage] = useState("");
+  const navigate = useNavigate();
+  const credentialsCtx = useContext(CredentialsContext)
 
   const addUsernameHandler = (e) => {
     setUserInput((prevState) => {
@@ -31,23 +34,23 @@ const Register = () => {
         body: JSON.stringify(userInput),
       });
       if (!response.ok) {
-        const message = await response.json()
+        const message = await response.json();
         throw new Error(message.message);
       } else {
         const data = await response.json();
-        navigate('/')
+        credentialsCtx.setCredentialsState(data)
+        navigate("/");
         console.log(data);
       }
     } catch (error) {
-        setErrorMessage(error.message);
+      setErrorMessage(error.message);
     }
     setUserInput({
-        username: '',
-        password: ''
-    })
+      username: "",
+      password: "",
+    });
   };
 
-  const navigate = useNavigate()
 
   return (
     <div>
