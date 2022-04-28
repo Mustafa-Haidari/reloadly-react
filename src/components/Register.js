@@ -10,6 +10,7 @@ const Register = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const navigate = useNavigate();
   const credentialsCtx = useContext(CredentialsContext)
+  const [loading, setLoading] = useState(false)
 
   const addUsernameHandler = (e) => {
     setUserInput((prevState) => {
@@ -24,7 +25,6 @@ const Register = () => {
 
   const onSubmitHandler = async (event) => {
     event.preventDefault();
-
     try {
       const response = await fetch(`http://localhost:4000/register`, {
         method: "POST",
@@ -33,6 +33,8 @@ const Register = () => {
         },
         body: JSON.stringify(userInput),
       });
+
+      setLoading(true)
       if (!response.ok) {
         const message = await response.json();
         throw new Error(message.message);
@@ -40,7 +42,6 @@ const Register = () => {
         const data = await response.json();
         credentialsCtx.setCredentialsState(data)
         navigate("/");
-        console.log(data);
       }
     } catch (error) {
       setErrorMessage(error.message);
@@ -49,6 +50,7 @@ const Register = () => {
       username: "",
       password: "",
     });
+    setLoading(false)
   };
 
 
@@ -57,6 +59,7 @@ const Register = () => {
       <Link to="/">Home</Link>
       {errorMessage && <p>{errorMessage}</p>}
       <h1>Register</h1>
+      {loading && <p>Loading...</p>}
       <form onSubmit={onSubmitHandler}>
         <input
           value={userInput.username}

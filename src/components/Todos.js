@@ -1,11 +1,14 @@
-import React, { useCallback, useContext, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState, useRef } from "react";
 import CredentialsContext from "../store/CredentialsContext";
+import { v4 as uuidv4 } from 'uuid';
 
 const Todos = () => {
   const [todos, setTodos] = useState('');
   const [todoText, setTodoText] = useState('')
   const credentialsCtx = useContext(CredentialsContext)
   const {username, password} = credentialsCtx.credentialsState;
+  const [filter, setFilter] = useState('Uncompleted')
+  const taskRef = useRef()
 
   const persist = (newTodos) => {
     fetch(`http://localhost:4000/todos`, {
@@ -18,9 +21,8 @@ const Todos = () => {
       });
   }
 
-  const fetchData =  useCallback( async () => {
-    try {
-      const response = await fetch(`http://localhost:4000/todos`, {
+  const fetchData = useCallback( async () => {
+    const response = await fetch(`http://localhost:4000/todos`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -29,14 +31,11 @@ const Todos = () => {
       });
       const data = await response.json()
       setTodos(data)
-    } catch (error) {
-      console.log(error)
-    }
-  })
+  }, [username, password])
 
   useEffect(() => {
     fetchData()
-  },[fetchData, username, password])
+  },[fetchData])
 
 
   const addTodo = (e) => {
@@ -44,26 +43,42 @@ const Todos = () => {
       if(todoText.trim() === ''){
           return
       }
-      const newTodo = {checked: false, text: todoText}
+      const newTodo = {id: uuidv4(), checked: false, text: todoText}
       const newTodos = [...todos, newTodo];
       setTodos(newTodos)
-      console.log(newTodos)
       setTodoText('')
       persist(newTodos)
   }
 
-  const toggleTodo = (index) => {
+  const toggleTodo = (id) => {
     const newTodoList = [...todos]
-    newTodoList[index].checked = !newTodoList[index].checked
+    const todoItem = newTodoList.find((todo) => todo.id === id)
+    todoItem.checked = !todoItem.checked;
     setTodos(newTodoList)
+    persist(newTodoList)
+  }
+
+  const getTodo = () => {
+    const filteredData = todos.filter(todo => filter === 'Completed' ? todo.checked : !todo.checked);
+    // console.log(filteredData)
+    return filteredData
+  }
+
+  const changeFilter = (newFilter) => {
+    setFilter(newFilter)
   }
 
 
   return (
     <div>
-        {todos.length > 0 ? todos.map((todo, index) => (
-        <div key={index}>
-          <input onChange={() => toggleTodo(index)} id="checkbox1" type="checkbox" />
+      <select onChange={(e) => changeFilter(e.target.value)} value={filter}>
+        <option value='Completed'>Completed</option>
+        <option value='Uncompleted'>Uncompleted</option>
+      </select>
+
+        {todos.length > 0 ? getTodo().map((todo) => (
+        <div key={todo.id}>
+          <input checked={todo.checked} onChange={() => toggleTodo(todo.id)} id="checkbox1" type="checkbox" />
           <label htmlFor="checkbox1">{todo.text}</label>
         </div>
       )) : ''}
